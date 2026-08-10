@@ -7,7 +7,16 @@ export const firebaseConfig = {
   appId: "1:62062876103:web:f7f2dcaacc47d19d7935e2"
 };
 
+
+
+// ================================
+
+// อีเมลผู้ดูแลร้าน
+
+// ================================
+
 export const ADMIN_EMAILS = [
-  "poon1000duu@gmail.com@gmail.com",
+
+  "poon1000duu@gmail.com",
+
   "chachacoffee2569@gmail.com"
-];
