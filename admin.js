@@ -21,7 +21,7 @@ import {
 
 import {
   firebaseConfig,
-  ADMIN_EMAIL
+  ADMIN_EMAILS
 } from "./firebase-config.js";
 
 
@@ -51,9 +51,9 @@ document.getElementById("loginBtn").onclick = async () => {
 
     await signInWithPopup(auth, provider);
 
-  } catch (e) {
+  } catch (error) {
 
-    console.error(e);
+    console.error(error);
 
     loginMessage.textContent =
       "เข้าสู่ระบบไม่สำเร็จ";
@@ -63,11 +63,42 @@ document.getElementById("loginBtn").onclick = async () => {
 };
 
 
-document.getElementById("logoutBtn").onclick = () => {
+document.getElementById("logoutBtn").onclick = async () => {
 
-  signOut(auth);
+  try {
+
+    await signOut(auth);
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
 
 };
+
+
+// =====================================================
+// ตรวจสอบว่าเป็นผู้ดูแลหรือไม่
+// =====================================================
+
+function isAdmin(email) {
+
+  if (!email) {
+    return false;
+  }
+
+  if (!Array.isArray(ADMIN_EMAILS)) {
+    return false;
+  }
+
+  return ADMIN_EMAILS
+    .map(item => String(item).trim().toLowerCase())
+    .includes(
+      String(email).trim().toLowerCase()
+    );
+
+}
 
 
 // =====================================================
@@ -92,7 +123,10 @@ function renderOrders(snap) {
   // จำนวนชุดทั้งหมด
   const totalQty = rows.reduce(
     (sum, order) =>
-      sum + Number(order.quantity || getOrderQuantity(order)),
+      sum + Number(
+        order.quantity ||
+        getOrderQuantity(order)
+      ),
     0
   );
 
@@ -135,7 +169,9 @@ function renderOrders(snap) {
 
         console.error(error);
 
-        alert("เปลี่ยนสถานะไม่สำเร็จ");
+        alert(
+          "เปลี่ยนสถานะไม่สำเร็จ"
+        );
 
       }
 
@@ -152,11 +188,15 @@ function renderOrders(snap) {
 
     button.onclick = () => {
 
-      const id = button.dataset.id;
+      const id =
+        button.dataset.id;
 
-      const order = rows.find(
-        item => item.id === id
-      );
+
+      const order =
+        rows.find(
+          item => item.id === id
+        );
+
 
       if (order) {
 
@@ -177,13 +217,18 @@ function renderOrders(snap) {
 
     button.onclick = async () => {
 
-      const id = button.dataset.id;
+      const id =
+        button.dataset.id;
+
 
       const ok = confirm(
         "ยืนยันการลบออเดอร์นี้ใช่ไหม?\n\nเมื่อลบแล้วจะไม่สามารถกู้คืนได้"
       );
 
-      if (!ok) return;
+
+      if (!ok) {
+        return;
+      }
 
 
       try {
@@ -192,13 +237,19 @@ function renderOrders(snap) {
           doc(db, "orders", id)
         );
 
-        alert("ลบออเดอร์เรียบร้อยแล้ว");
+
+        alert(
+          "ลบออเดอร์เรียบร้อยแล้ว"
+        );
+
 
       } catch (error) {
 
         console.error(error);
 
-        alert("ลบออเดอร์ไม่สำเร็จ");
+        alert(
+          "ลบออเดอร์ไม่สำเร็จ"
+        );
 
       }
 
@@ -230,14 +281,27 @@ function getOrderItems(order) {
   // ระบบเก่า
   return [
     {
-      riceType: order.riceType || "",
-      toppings: order.toppings || [],
-      packageType: order.packageType || "",
-      quantity: Number(order.quantity || 0),
+      riceType:
+        order.riceType || "",
+
+      toppings:
+        order.toppings || [],
+
+      packageType:
+        order.packageType || "",
+
+      quantity:
+        Number(order.quantity || 0),
+
       unitPrice:
         Number(order.total || 0) /
-        Math.max(Number(order.quantity || 1), 1),
-      lineTotal: Number(order.total || 0)
+        Math.max(
+          Number(order.quantity || 1),
+          1
+        ),
+
+      lineTotal:
+        Number(order.total || 0)
     }
   ];
 
@@ -250,11 +314,14 @@ function getOrderItems(order) {
 
 function getOrderQuantity(order) {
 
-  const items = getOrderItems(order);
+  const items =
+    getOrderItems(order);
+
 
   return items.reduce(
     (sum, item) =>
-      sum + Number(item.quantity || 0),
+      sum +
+      Number(item.quantity || 0),
     0
   );
 
@@ -267,96 +334,100 @@ function getOrderQuantity(order) {
 
 function createOrderHTML(order) {
 
-  const items = getOrderItems(order);
+  const items =
+    getOrderItems(order);
 
 
-  const itemsHTML = items.map(
-    (item, index) => {
+  const itemsHTML =
+    items.map(
+      (item, index) => {
 
-      const toppings =
-        Array.isArray(item.toppings)
-          ? item.toppings
-          : [];
-
-
-      const quantity =
-        Number(item.quantity || 0);
+        const toppings =
+          Array.isArray(item.toppings)
+            ? item.toppings
+            : [];
 
 
-      const lineTotal =
-        Number(
-          item.lineTotal ||
-          (
-            Number(item.unitPrice || 0) *
-            quantity
-          )
-        );
+        const quantity =
+          Number(item.quantity || 0);
 
 
-      return `
+        const lineTotal =
+          Number(
+            item.lineTotal ||
+            (
+              Number(item.unitPrice || 0) *
+              quantity
+            )
+          );
 
-        <div
-          style="
-            margin-top:12px;
-            padding:14px;
-            border:1px solid #ddd;
-            border-radius:12px;
-            background:#fafafa;
-          "
-        >
+
+        return `
 
           <div
             style="
-              font-weight:bold;
-              font-size:18px;
-              margin-bottom:8px;
+              margin-top:12px;
+              padding:14px;
+              border:1px solid #ddd;
+              border-radius:12px;
+              background:#fafafa;
             "
           >
-            🍚 รายการที่ ${index + 1}
+
+            <div
+              style="
+                font-weight:bold;
+                font-size:18px;
+                margin-bottom:8px;
+              "
+            >
+              🍚 รายการที่ ${index + 1}
+            </div>
+
+
+            <div class="line">
+              🍚 ข้าว:
+              ${esc(item.riceType || "-")}
+            </div>
+
+
+            <div class="line">
+              🥩 หน้า:
+              ${esc(
+                toppings.join(" + ") || "-"
+              )}
+            </div>
+
+
+            <div class="line">
+              📦 แบบ:
+              ${esc(
+                item.packageType || "-"
+              )}
+            </div>
+
+
+            <div class="line">
+              🔢 จำนวน:
+              ${quantity}
+            </div>
+
+
+            <div
+              class="line"
+              style="font-weight:bold;"
+            >
+              💰 รายการนี้:
+              ${lineTotal.toLocaleString()}
+              บาท
+            </div>
+
           </div>
 
+        `;
 
-          <div class="line">
-            🍚 ข้าว:
-            ${esc(item.riceType || "-")}
-          </div>
-
-
-          <div class="line">
-            🥩 หน้า:
-            ${esc(
-              toppings.join(" + ") || "-"
-            )}
-          </div>
-
-
-          <div class="line">
-            📦 แบบ:
-            ${esc(item.packageType || "-")}
-          </div>
-
-
-          <div class="line">
-            🔢 จำนวน:
-            ${quantity}
-          </div>
-
-
-          <div
-            class="line"
-            style="font-weight:bold;"
-          >
-            💰 รายการนี้:
-            ${lineTotal.toLocaleString()}
-            บาท
-          </div>
-
-        </div>
-
-      `;
-
-    }
-  ).join("");
+      }
+    ).join("");
 
 
   return `
@@ -364,9 +435,13 @@ function createOrderHTML(order) {
     <article class="order">
 
       <h3>
-        🍚 ${esc(order.customerName || "-")}
+        🍚 ${esc(
+          order.customerName || "-"
+        )}
         —
-        ${Number(order.total || 0).toLocaleString()}
+        ${Number(
+          order.total || 0
+        ).toLocaleString()}
         บาท
       </h3>
 
@@ -374,7 +449,10 @@ function createOrderHTML(order) {
       ${itemsHTML}
 
 
-      <div class="line" style="margin-top:12px;">
+      <div
+        class="line"
+        style="margin-top:12px;"
+      >
         📦 รวม:
         ${getOrderQuantity(order)}
         ชุด
@@ -382,17 +460,23 @@ function createOrderHTML(order) {
 
 
       <div class="line">
-        📞 ${esc(order.phone || "-")}
+        📞 ${esc(
+          order.phone || "-"
+        )}
       </div>
 
 
       <div class="line">
-        📍 ${esc(order.address || "-")}
+        📍 ${esc(
+          order.address || "-"
+        )}
       </div>
 
 
       <div class="line">
-        📝 ${esc(order.note || "-")}
+        📝 ${esc(
+          order.note || "-"
+        )}
       </div>
 
 
@@ -476,7 +560,9 @@ function createOrderHTML(order) {
 function showEditForm(order) {
 
   const oldForm =
-    document.getElementById("editOrderForm");
+    document.getElementById(
+      "editOrderForm"
+    );
 
 
   if (oldForm) {
@@ -549,7 +635,9 @@ function showEditForm(order) {
 
             <input
               class="editRice"
-              value="${escAttr(item.riceType || "")}"
+              value="${escAttr(
+                item.riceType || ""
+              )}"
               style="${inputStyle()}"
             >
 
@@ -560,7 +648,9 @@ function showEditForm(order) {
 
             <input
               class="editToppings"
-              value="${escAttr(toppings)}"
+              value="${escAttr(
+                toppings
+              )}"
               placeholder="เช่น หมูฝอย, หมูกรอบ"
               style="${inputStyle()}"
             >
@@ -572,7 +662,9 @@ function showEditForm(order) {
 
             <input
               class="editPackage"
-              value="${escAttr(item.packageType || "")}"
+              value="${escAttr(
+                item.packageType || ""
+              )}"
               style="${inputStyle()}"
             >
 
@@ -585,7 +677,9 @@ function showEditForm(order) {
               class="editItemQuantity"
               type="number"
               min="1"
-              value="${Number(item.quantity || 1)}"
+              value="${Number(
+                item.quantity || 1
+              )}"
               style="${inputStyle()}"
             >
 
@@ -598,7 +692,9 @@ function showEditForm(order) {
               class="editUnitPrice"
               type="number"
               min="0"
-              value="${Number(item.unitPrice || 0)}"
+              value="${Number(
+                item.unitPrice || 0
+              )}"
               style="${inputStyle()}"
             >
 
@@ -637,7 +733,9 @@ function showEditForm(order) {
 
       <input
         id="editCustomerName"
-        value="${escAttr(order.customerName || "")}"
+        value="${escAttr(
+          order.customerName || ""
+        )}"
         style="${inputStyle()}"
       >
 
@@ -658,7 +756,9 @@ function showEditForm(order) {
 
       <input
         id="editPhone"
-        value="${escAttr(order.phone || "")}"
+        value="${escAttr(
+          order.phone || ""
+        )}"
         style="${inputStyle()}"
       >
 
@@ -670,7 +770,9 @@ function showEditForm(order) {
       <textarea
         id="editAddress"
         style="${textareaStyle()}"
-      >${esc(order.address || "")}</textarea>
+      >${esc(
+        order.address || ""
+      )}</textarea>
 
 
       <label>
@@ -680,7 +782,9 @@ function showEditForm(order) {
       <textarea
         id="editNote"
         style="${textareaStyle()}"
-      >${esc(order.note || "")}</textarea>
+      >${esc(
+        order.note || ""
+      )}</textarea>
 
 
       <label>
@@ -691,7 +795,9 @@ function showEditForm(order) {
         id="editTotal"
         type="number"
         min="0"
-        value="${Number(order.total || 0)}"
+        value="${Number(
+          order.total || 0
+        )}"
         style="${inputStyle()}"
       >
 
@@ -810,74 +916,95 @@ function showEditForm(order) {
       // -----------------------------------------------
 
       const editItems =
-        [...document.querySelectorAll(".editItem")]
-          .map(itemEl => {
+        [
+          ...document.querySelectorAll(
+            ".editItem"
+          )
+        ].map(itemEl => {
 
-            const toppingsText =
+          const toppingsText =
+            itemEl
+              .querySelector(
+                ".editToppings"
+              )
+              .value;
+
+
+          const toppings =
+            toppingsText
+              .split(",")
+              .map(x => x.trim())
+              .filter(Boolean);
+
+
+          const quantity =
+            Number(
               itemEl
-                .querySelector(".editToppings")
-                .value;
+                .querySelector(
+                  ".editItemQuantity"
+                )
+                .value
+            );
 
 
-            const toppings =
-              toppingsText
-                .split(",")
-                .map(x => x.trim())
-                .filter(Boolean);
+          const unitPrice =
+            Number(
+              itemEl
+                .querySelector(
+                  ".editUnitPrice"
+                )
+                .value
+            );
 
 
-            const quantity =
-              Number(
-                itemEl
-                  .querySelector(".editItemQuantity")
-                  .value
-              );
+          return {
+
+            riceType:
+              itemEl
+                .querySelector(
+                  ".editRice"
+                )
+                .value
+                .trim(),
 
 
-            const unitPrice =
-              Number(
-                itemEl
-                  .querySelector(".editUnitPrice")
-                  .value
-              );
+            toppings,
 
 
-            return {
+            packageType:
+              itemEl
+                .querySelector(
+                  ".editPackage"
+                )
+                .value
+                .trim(),
 
-              riceType:
-                itemEl
-                  .querySelector(".editRice")
-                  .value
-                  .trim(),
 
-              toppings,
+            quantity,
 
-              packageType:
-                itemEl
-                  .querySelector(".editPackage")
-                  .value
-                  .trim(),
 
-              quantity,
+            unitPrice,
 
-              unitPrice,
 
-              lineTotal:
-                unitPrice * quantity
+            lineTotal:
+              unitPrice * quantity
 
-            };
+          };
 
-          });
+        });
 
 
       // -----------------------------------------------
-      // คำนวณจำนวนรวม
+      // จำนวนรวม
       // -----------------------------------------------
 
       const totalQuantity =
         editItems.reduce(
           (sum, item) =>
-            sum + Number(item.quantity || 0),
+            sum +
+            Number(
+              item.quantity || 0
+            ),
           0
         );
 
@@ -890,7 +1017,9 @@ function showEditForm(order) {
 
         customerName:
           document
-            .getElementById("editCustomerName")
+            .getElementById(
+              "editCustomerName"
+            )
             .value
             .trim(),
 
@@ -899,8 +1028,7 @@ function showEditForm(order) {
           editItems,
 
 
-        // เก็บข้อมูลรายการแรกไว้ด้วย
-        // เพื่อรองรับระบบเก่า
+        // รองรับระบบเก่า
         riceType:
           editItems[0]?.riceType || "",
 
@@ -920,42 +1048,56 @@ function showEditForm(order) {
         total:
           Number(
             document
-              .getElementById("editTotal")
+              .getElementById(
+                "editTotal"
+              )
               .value
           ),
 
 
         phone:
           document
-            .getElementById("editPhone")
+            .getElementById(
+              "editPhone"
+            )
             .value
             .trim(),
 
 
         address:
           document
-            .getElementById("editAddress")
+            .getElementById(
+              "editAddress"
+            )
             .value
             .trim(),
 
 
         note:
           document
-            .getElementById("editNote")
+            .getElementById(
+              "editNote"
+            )
             .value
             .trim(),
 
 
         orderStatus:
           document
-            .getElementById("editStatus")
+            .getElementById(
+              "editStatus"
+            )
             .value
 
       };
 
 
       await updateDoc(
-        doc(db, "orders", order.id),
+        doc(
+          db,
+          "orders",
+          order.id
+        ),
         updateData
       );
 
@@ -1060,69 +1202,117 @@ function escAttr(v) {
 let unsubscribe = null;
 
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(
+  auth,
+  async user => {
 
-  if (unsubscribe) {
+    if (unsubscribe) {
 
-    unsubscribe();
+      unsubscribe();
 
-    unsubscribe = null;
-
-  }
-
-
-  if (!user) {
-
-    loginBox.classList.remove("hidden");
-
-    adminBox.classList.add("hidden");
-
-    return;
-
-  }
-
-
-  if (user.email !== ADMIN_EMAIL) {
-
-    loginBox.classList.remove("hidden");
-
-    adminBox.classList.add("hidden");
-
-    loginMessage.textContent =
-      "บัญชีนี้ไม่มีสิทธิ์เป็นผู้ดูแล";
-
-    signOut(auth);
-
-    return;
-
-  }
-
-
-  loginBox.classList.add("hidden");
-
-  adminBox.classList.remove("hidden");
-
-  userEmail.textContent =
-    user.email;
-
-
-  const q = query(
-    collection(db, "orders"),
-    orderBy("createdAt", "desc")
-  );
-
-
-  unsubscribe = onSnapshot(
-    q,
-    renderOrders,
-    error => {
-
-      console.error(error);
-
-      ordersEl.innerHTML =
-        "<p>อ่านออเดอร์ไม่ได้ กรุณาตรวจสอบ Rules</p>";
+      unsubscribe = null;
 
     }
-  );
 
-});
+
+    // -----------------------------------------------
+    // ยังไม่ได้ Login
+    // -----------------------------------------------
+
+    if (!user) {
+
+      loginBox.classList.remove(
+        "hidden"
+      );
+
+      adminBox.classList.add(
+        "hidden"
+      );
+
+      return;
+
+    }
+
+
+    // -----------------------------------------------
+    // ตรวจสอบอีเมลผู้ดูแล
+    // -----------------------------------------------
+
+    if (!isAdmin(user.email)) {
+
+      loginBox.classList.remove(
+        "hidden"
+      );
+
+      adminBox.classList.add(
+        "hidden"
+      );
+
+      loginMessage.textContent =
+        "บัญชีนี้ไม่มีสิทธิ์เป็นผู้ดูแล";
+
+
+      try {
+
+        await signOut(auth);
+
+      } catch (error) {
+
+        console.error(error);
+
+      }
+
+      return;
+
+    }
+
+
+    // -----------------------------------------------
+    // เป็นผู้ดูแล
+    // -----------------------------------------------
+
+    loginBox.classList.add(
+      "hidden"
+    );
+
+    adminBox.classList.remove(
+      "hidden"
+    );
+
+
+    userEmail.textContent =
+      user.email;
+
+
+    // -----------------------------------------------
+    // โหลดออเดอร์
+    // -----------------------------------------------
+
+    const q = query(
+      collection(
+        db,
+        "orders"
+      ),
+      orderBy(
+        "createdAt",
+        "desc"
+      )
+    );
+
+
+    unsubscribe =
+      onSnapshot(
+        q,
+        renderOrders,
+        error => {
+
+          console.error(error);
+
+          ordersEl.innerHTML =
+            "<p>อ่านออเดอร์ไม่ได้ กรุณาตรวจสอบ Rules</p>";
+
+        }
+      );
+
+  }
+);
