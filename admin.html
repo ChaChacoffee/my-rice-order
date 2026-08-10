@@ -6,30 +6,75 @@
   <title>จัดการออเดอร์</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
   <main class="container">
+
     <header class="hero">
       <h1>📋 จัดการออเดอร์</h1>
       <p>สำหรับครอบครัว/ผู้ดูแลร้าน</p>
     </header>
 
+
     <section id="loginBox" class="card">
-      <p>เข้าสู่ระบบด้วย Google เพื่อดูออเดอร์</p>
-      <button id="loginBtn">🔐 เข้าสู่ระบบ Google</button>
-      <p id="loginMessage" class="message"></p>
+
+      <p>
+        เข้าสู่ระบบด้วย Google เพื่อดูออเดอร์
+      </p>
+
+      <button id="loginBtn">
+        🔐 เข้าสู่ระบบ Google
+      </button>
+
+      <p
+        id="loginMessage"
+        class="message"
+      ></p>
+
     </section>
 
-    <section id="adminBox" class="card hidden">
+
+    <section
+      id="adminBox"
+      class="card hidden"
+    >
+
       <div class="toolbar">
+
         <div>
+
           <strong id="userEmail"></strong>
-          <div class="summary" id="summary"></div>
+
+          <div
+            class="summary"
+            id="summary"
+          ></div>
+
         </div>
-        <button id="logoutBtn" class="secondary">ออกจากระบบ</button>
+
+        <button
+          id="logoutBtn"
+          class="secondary"
+        >
+          ออกจากระบบ
+        </button>
+
       </div>
+
+
       <div id="orders"></div>
+
     </section>
+
   </main>
-  <script type="module" src="admin.js"></script>
+
+
+  <!-- เพิ่ม ?v=2 เพื่อบังคับให้โหลด admin.js ตัวใหม่ -->
+  <script
+    type="module"
+    src="admin.js?v=2"
+  ></script>
+
 </body>
 </html>
