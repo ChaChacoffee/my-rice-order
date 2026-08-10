@@ -1,0 +1,28 @@
+*{box-sizing:border-box}
+body{margin:0;background:#f6f6f6;font-family:system-ui,-apple-system,"Noto Sans Thai",sans-serif;color:#222}
+.container{max-width:720px;margin:auto;padding:16px}
+.hero{background:#fff;padding:22px;border-radius:18px;margin-bottom:14px;box-shadow:0 2px 10px #00000010}
+.hero h1{margin:0 0 8px;font-size:28px}
+.card{background:#fff;border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 2px 10px #00000010}
+h2{font-size:19px;margin:22px 0 10px}
+label{display:block;margin:10px 0}
+input[type=text],input[type=tel],input[type=number],select,textarea{width:100%;padding:12px;border:1px solid #ccc;border-radius:10px;font-size:16px;background:#fff}
+input[type=radio],input[type=checkbox]{transform:scale(1.15);margin-right:8px}
+textarea{min-height:80px;resize:vertical}
+.toppings{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.toppings label{padding:10px;border:1px solid #eee;border-radius:10px}
+.hint{font-size:14px;color:#666}
+.total{font-size:22px;padding:16px 0}
+button{width:100%;border:0;border-radius:12px;padding:14px;font-size:17px;font-weight:700;cursor:pointer}
+button:not(.secondary){background:#111;color:#fff}
+button.secondary{background:#eee;color:#222;width:auto;padding:10px 14px}
+.message{min-height:22px;font-weight:600}
+.hidden{display:none}
+.toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}
+.summary{margin-top:6px;color:#666}
+.order{border:1px solid #ddd;border-radius:14px;padding:15px;margin:10px 0}
+.order h3{margin:0 0 8px}
+.order .line{margin:5px 0}
+.order select{margin-top:10px}
+footer{text-align:center;color:#666;padding:10px 0 30px}
+@media(max-width:520px){.toppings{grid-template-columns:1fr}.toolbar{align-items:flex-start;flex-direction:column}.secondary{width:100%}}

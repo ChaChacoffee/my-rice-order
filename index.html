@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>สั่งข้าวเหนียว</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <h1>🍚 สั่งข้าวเหนียว</h1>
+      <p>ส่งฟรีในเขตเทศบาล • เริ่มส่ง 09.00 น. เป็นต้นไป</p>
+      <p>📍 หน้าธนาคารกรุงไทย ข้างร้านกาแฟชาช่า</p>
+    </header>
+
+    <form id="orderForm" class="card">
+      <h2>1. เลือกข้าว</h2>
+      <label><input type="radio" name="riceType" value="ข้าวเหนียวขาว" required> 🍚 ข้าวเหนียวขาว</label>
+      <label><input type="radio" name="riceType" value="ข้าวเหนียวดำ"> 🍚 ข้าวเหนียวดำ</label>
+
+      <h2>2. เลือกรูปแบบ</h2>
+      <select id="packageType" required>
+        <option value="">-- เลือก --</option>
+        <option value="ปกติ 1 อย่าง" data-price="20">1 อย่าง — 20 บาท</option>
+        <option value="ปกติ 2 อย่าง" data-price="30">2 อย่าง — 30 บาท</option>
+        <option value="กล่องเล็ก" data-price="35">กล่องเล็ก — 35 บาท</option>
+        <option value="กล่องใหญ่" data-price="50">กล่องใหญ่ — 50 บาท</option>
+      </select>
+
+      <h2>3. เลือกหน้า</h2>
+      <p class="hint">ถ้าเลือก 1 อย่าง ให้ติ๊ก 1 รายการ / ถ้า 2 อย่าง ให้ติ๊ก 2 รายการ</p>
+      <div class="toppings">
+        <label><input type="checkbox" name="topping" value="หมูฝอย"> หมูฝอย</label>
+        <label><input type="checkbox" name="topping" value="หมูกรอบ"> หมูกรอบ</label>
+        <label><input type="checkbox" name="topping" value="หมูสวรรค์"> หมูสวรรค์</label>
+        <label><input type="checkbox" name="topping" value="ลาบหมู"> ลาบหมู</label>
+        <label><input type="checkbox" name="topping" value="หมูเค็ม"> หมูเค็ม</label>
+        <label><input type="checkbox" name="topping" value="เนื้อเค็ม"> เนื้อเค็ม</label>
+      </div>
+
+      <label>จำนวน
+        <input id="quantity" type="number" min="1" value="1" required>
+      </label>
+
+      <h2>4. ข้อมูลลูกค้า</h2>
+      <label>ชื่อ
+        <input id="customerName" type="text" required placeholder="ชื่อผู้สั่ง">
+      </label>
+      <label>เบอร์โทร
+        <input id="phone" type="tel" inputmode="tel" required placeholder="08xxxxxxxx">
+      </label>
+      <label>จุดส่ง / ที่อยู่
+        <textarea id="address" required placeholder="เช่น บ้านเลขที่..., ร้าน..., จุดนัดรับ..."></textarea>
+      </label>
+      <label>หมายเหตุ
+        <textarea id="note" placeholder="เช่น ขอส่งก่อน 10 โมง"></textarea>
+      </label>
+
+      <div class="total">ยอดรวม: <strong id="total">0</strong> บาท</div>
+      <button type="submit" id="submitBtn">✅ ยืนยันออเดอร์</button>
+      <p id="message" class="message"></p>
+    </form>
+
+    <footer>
+      <p>💳 PromptPay: 0863327303</p>
+      <p>📞 086-332-7303</p>
+    </footer>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
