@@ -8,15 +8,11 @@ export const firebaseConfig = {
 };
 
 
-
 // ================================
-
 // อีเมลผู้ดูแลร้าน
-
 // ================================
 
 export const ADMIN_EMAILS = [
-
   "poon1000duu@gmail.com",
-
   "chachacoffee2569@gmail.com"
+];
