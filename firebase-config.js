@@ -1,14 +1,11 @@
-// 1) เปิด Firebase Console > Project settings > Your apps > Web app
-// 2) คัดลอกค่าจาก firebaseConfig มาใส่ด้านล่าง
-// 3) เปลี่ยน ADMIN_EMAIL เป็นอีเมล Google ของครอบครัวที่คุณตั้งไว้ใน Firestore Rules
-
 export const firebaseConfig = {
-  apiKey: "ใส่จาก Firebase",
-  authDomain: "ใส่จาก Firebase",
-  projectId: "ใส่จาก Firebase",
-  storageBucket: "ใส่จาก Firebase",
-  messagingSenderId: "ใส่จาก Firebase",
-  appId: "ใส่จาก Firebase"
+  apiKey: "AIzaSyCW7TBBAok-SblnGUl-ITkcR_TLXhJinYs",
+  authDomain: "order-2b260.firebaseapp.com",
+  projectId: "order-2b260",
+  storageBucket: "order-2b260.firebasestorage.app",
+  messagingSenderId: "62062876103",
+  appId: "1:62062876103:web:f7f2dcaacc47d19d7935e2",
+  measurementId: "G-9QHTBWFKGH"
 };
 
-export const ADMIN_EMAIL = "ใส่อีเมล Google ของคุณตรงนี้";
+export const ADMIN_EMAIL = "poon1000duu@gmail.com";
