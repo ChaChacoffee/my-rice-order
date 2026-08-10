@@ -7,465 +7,476 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-import { firebaseConfig } from "./firebase-config.js";
+import {
+  firebaseConfig
+} from "./firebase-config.js";
 
-
-// ========================================
-// Firebase
-// ========================================
 
 const app = initializeApp(firebaseConfig);
-
 const db = getFirestore(app);
 
 
-// ========================================
-// ตั้งราคาต่อชุด
-// ========================================
-
-const PRICE_PER_SET = 20;
-
-
-// ========================================
-// ตัวเลือก
-// ========================================
-
-const RICE_OPTIONS = [
-  "ข้าวเหนียวขาว",
-  "ข้าวเหนียวดำ"
-];
+const form = document.getElementById("orderForm");
+const itemsEl = document.getElementById("items");
+const addItemBtn = document.getElementById("addItemBtn");
+const totalEl = document.getElementById("total");
+const messageEl = document.getElementById("message");
+const submitBtn = document.getElementById("submitBtn");
 
 
-const TOPPING_OPTIONS = [
+const toppingList = [
   "หมูฝอย",
-  "หมูกรอบ"
+  "หมูกรอบ",
+  "หมูสวรรค์",
+  "ลาบหมู",
+  "หมูเค็ม",
+  "เนื้อเค็ม"
 ];
 
 
-const PACKAGE_OPTIONS = [
-  "ปกติ 1 อย่าง"
-];
+let itemNumber = 0;
 
 
-// ========================================
-// Elements
-// ========================================
-
-const itemsEl =
-  document.getElementById("items");
-
-const addItemBtn =
-  document.getElementById("addItemBtn");
-
-const orderSummary =
-  document.getElementById("orderSummary");
-
-const submitBtn =
-  document.getElementById("submitBtn");
-
-const messageEl =
-  document.getElementById("message");
-
-
-// ========================================
-// รายการสินค้า
-// ========================================
-
-let items = [];
-
-
-// ========================================
-// สร้างรายการใหม่
-// ========================================
-
-function createItem() {
-
-  return {
-
-    riceType: "ข้าวเหนียวขาว",
-
-    topping: "หมูฝอย",
-
-    packageType: "ปกติ 1 อย่าง",
-
-    quantity: 1
-
-  };
-
-}
-
-
-// ========================================
+// =========================
 // เพิ่มรายการ
-// ========================================
+// =========================
 
 function addItem() {
 
-  items.push(createItem());
+  itemNumber++;
 
-  renderItems();
+  const item = document.createElement("div");
 
+  item.className = "order-item";
+
+  item.style.cssText = `
+    border:1px solid #ddd;
+    border-radius:14px;
+    padding:15px;
+    margin-bottom:15px;
+    background:#fafafa;
+  `;
+
+
+  item.innerHTML = `
+
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+    ">
+
+      <h3 style="margin:0">
+        🍚 รายการที่ ${itemNumber}
+      </h3>
+
+      <button
+        type="button"
+        class="removeItem"
+        style="
+          background:#dc3545;
+          color:white;
+          padding:6px 10px;
+        "
+      >
+        ลบ
+      </button>
+
+    </div>
+
+
+    <strong>เลือกข้าว</strong>
+
+    <label>
+      <input
+        type="radio"
+        name="rice-${itemNumber}"
+        value="ข้าวเหนียวขาว"
+        required
+      >
+      🍚 ข้าวเหนียวขาว
+    </label>
+
+    <label>
+      <input
+        type="radio"
+        name="rice-${itemNumber}"
+        value="ข้าวเหนียวดำ"
+      >
+      🍚 ข้าวเหนียวดำ
+    </label>
+
+
+    <label>
+      <strong>รูปแบบ</strong>
+
+      <select
+        class="packageType"
+        required
+      >
+
+        <option value="">
+          -- เลือก --
+        </option>
+
+        <option
+          value="ปกติ 1 อย่าง"
+          data-price="20"
+        >
+          1 อย่าง — 20 บาท
+        </option>
+
+        <option
+          value="ปกติ 2 อย่าง"
+          data-price="30"
+        >
+          2 อย่าง — 30 บาท
+        </option>
+
+        <option
+          value="กล่องเล็ก"
+          data-price="35"
+        >
+          กล่องเล็ก — 35 บาท
+        </option>
+
+        <option
+          value="กล่องใหญ่"
+          data-price="50"
+        >
+          กล่องใหญ่ — 50 บาท
+        </option>
+
+      </select>
+
+    </label>
+
+
+    <strong>เลือกหน้า</strong>
+
+    <div class="toppings">
+
+      ${toppingList.map(t => `
+        <label>
+          <input
+            type="checkbox"
+            class="topping"
+            value="${t}"
+          >
+          ${t}
+        </label>
+      `).join("")}
+
+    </div>
+
+
+    <label>
+      <strong>จำนวน</strong>
+
+      <input
+        type="number"
+        class="quantity"
+        min="1"
+        value="1"
+        required
+      >
+
+    </label>
+
+
+    <div style="
+      text-align:right;
+      font-weight:bold;
+      margin-top:10px;
+    ">
+
+      รายการนี้:
+      <span class="lineTotal">0</span>
+      บาท
+
+    </div>
+
+  `;
+
+
+  itemsEl.appendChild(item);
+
+
+  // เปลี่ยนราคา / จำนวน / หน้า
+  item.querySelector(".packageType")
+    .addEventListener("change", () => {
+
+      validateToppings(item);
+      calculateTotal();
+
+    });
+
+
+  item.querySelector(".quantity")
+    .addEventListener("input", calculateTotal);
+
+
+  item.querySelectorAll(".topping")
+    .forEach(cb => {
+
+      cb.addEventListener("change", () => {
+
+        validateToppings(item);
+        calculateTotal();
+
+      });
+
+    });
+
+
+  // ลบรายการ
+  item.querySelector(".removeItem")
+    .addEventListener("click", () => {
+
+      item.remove();
+
+      renumberItems();
+      calculateTotal();
+
+    });
+
+
+  calculateTotal();
 }
 
 
-// ========================================
-// ลบรายการ
-// ========================================
+// =========================
+// จำกัดจำนวนหน้า
+// =========================
 
-function removeItem(index) {
+function validateToppings(item) {
 
-  if (items.length <= 1) {
+  const packageType =
+    item.querySelector(".packageType").value;
 
-    alert("ต้องมีอย่างน้อย 1 รายการ");
+  const toppings =
+    [...item.querySelectorAll(".topping:checked")];
 
-    return;
 
+  let max = 99;
+
+  if (packageType === "ปกติ 1 อย่าง") {
+    max = 1;
+  }
+
+  if (packageType === "ปกติ 2 อย่าง") {
+    max = 2;
   }
 
 
-  items.splice(index, 1);
+  if (toppings.length > max) {
 
-  renderItems();
+    const last =
+      toppings[toppings.length - 1];
 
-}
+    last.checked = false;
 
-
-// ========================================
-// แสดงรายการ
-// ========================================
-
-function renderItems() {
-
-  itemsEl.innerHTML = "";
-
-
-  items.forEach((item, index) => {
-
-    const box =
-      document.createElement("div");
-
-
-    box.style.cssText = `
-      border:1px solid #ddd;
-      border-radius:12px;
-      padding:15px;
-      margin-top:15px;
-      background:#fff;
-    `;
-
-
-    box.innerHTML = `
-
-      <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        margin-bottom:12px;
-      ">
-
-        <strong style="font-size:18px">
-          รายการที่ ${index + 1}
-        </strong>
-
-        ${
-          items.length > 1
-            ? `
-              <button
-                type="button"
-                class="removeItemBtn"
-                data-index="${index}"
-                style="
-                  background:#d32f2f;
-                  color:white;
-                  border:0;
-                  border-radius:8px;
-                  padding:8px 12px;
-                "
-              >
-                🗑️ ลบ
-              </button>
-            `
-            : ""
-        }
-
-      </div>
-
-
-      <label>
-        🍚 ข้าว
-      </label>
-
-      <select
-        class="riceSelect"
-        data-index="${index}"
-        style="${inputStyle()}"
-      >
-
-        ${RICE_OPTIONS.map(rice => `
-          <option
-            value="${escapeAttr(rice)}"
-            ${
-              rice === item.riceType
-                ? "selected"
-                : ""
-            }
-          >
-            ${escapeHtml(rice)}
-          </option>
-        `).join("")}
-
-      </select>
-
-
-      <label>
-        🥩 หน้า
-      </label>
-
-      <select
-        class="toppingSelect"
-        data-index="${index}"
-        style="${inputStyle()}"
-      >
-
-        ${TOPPING_OPTIONS.map(topping => `
-          <option
-            value="${escapeAttr(topping)}"
-            ${
-              topping === item.topping
-                ? "selected"
-                : ""
-            }
-          >
-            ${escapeHtml(topping)}
-          </option>
-        `).join("")}
-
-      </select>
-
-
-      <label>
-        📦 แบบ
-      </label>
-
-      <select
-        class="packageSelect"
-        data-index="${index}"
-        style="${inputStyle()}"
-      >
-
-        ${PACKAGE_OPTIONS.map(packageType => `
-          <option
-            value="${escapeAttr(packageType)}"
-            ${
-              packageType === item.packageType
-                ? "selected"
-                : ""
-            }
-          >
-            ${escapeHtml(packageType)}
-          </option>
-        `).join("")}
-
-      </select>
-
-
-      <label>
-        🔢 จำนวน
-      </label>
-
-      <input
-        class="quantityInput"
-        data-index="${index}"
-        type="number"
-        min="1"
-        value="${item.quantity}"
-        style="${inputStyle()}"
-      >
-
-
-      <div style="
-        margin-top:10px;
-        font-weight:bold;
-        font-size:17px;
-      ">
-        ${PRICE_PER_SET.toLocaleString()} บาท/ชุด
-      </div>
-
-    `;
-
-
-    itemsEl.appendChild(box);
-
-  });
-
-
-  attachItemEvents();
-
-  updateSummary();
-
-}
-
-
-// ========================================
-// Event ของแต่ละรายการ
-// ========================================
-
-function attachItemEvents() {
-
-
-  document
-    .querySelectorAll(".removeItemBtn")
-    .forEach(button => {
-
-      button.onclick = () => {
-
-        const index =
-          Number(button.dataset.index);
-
-        removeItem(index);
-
-      };
-
-    });
-
-
-  document
-    .querySelectorAll(".riceSelect")
-    .forEach(select => {
-
-      select.onchange = () => {
-
-        const index =
-          Number(select.dataset.index);
-
-        items[index].riceType =
-          select.value;
-
-      };
-
-    });
-
-
-  document
-    .querySelectorAll(".toppingSelect")
-    .forEach(select => {
-
-      select.onchange = () => {
-
-        const index =
-          Number(select.dataset.index);
-
-        items[index].topping =
-          select.value;
-
-      };
-
-    });
-
-
-  document
-    .querySelectorAll(".packageSelect")
-    .forEach(select => {
-
-      select.onchange = () => {
-
-        const index =
-          Number(select.dataset.index);
-
-        items[index].packageType =
-          select.value;
-
-      };
-
-    });
-
-
-  document
-    .querySelectorAll(".quantityInput")
-    .forEach(input => {
-
-      input.oninput = () => {
-
-        const index =
-          Number(input.dataset.index);
-
-
-        let quantity =
-          Number(input.value);
-
-
-        if (!Number.isFinite(quantity) ||
-            quantity < 1) {
-
-          quantity = 1;
-
-        }
-
-
-        quantity =
-          Math.floor(quantity);
-
-
-        items[index].quantity =
-          quantity;
-
-
-        updateSummary();
-
-      };
-
-    });
-
-}
-
-
-// ========================================
-// สรุปยอด
-// ========================================
-
-function updateSummary() {
-
-  const totalQty =
-    items.reduce(
-      (sum, item) =>
-        sum + Number(item.quantity || 0),
-      0
+    alert(
+      packageType === "ปกติ 1 อย่าง"
+        ? "แบบ 1 อย่าง เลือกหน้าได้ 1 อย่างครับ"
+        : "แบบ 2 อย่าง เลือกหน้าได้ 2 อย่างครับ"
     );
 
-
-  const total =
-    totalQty * PRICE_PER_SET;
-
-
-  orderSummary.textContent =
-    `รวม ${totalQty} ชุด • ${total.toLocaleString()} บาท`;
+  }
 
 }
 
 
-// ========================================
-// กดเพิ่มรายการ
-// ========================================
+// =========================
+// คำนวณยอดรวม
+// =========================
+
+function calculateTotal() {
+
+  let total = 0;
+
+
+  document
+    .querySelectorAll(".order-item")
+    .forEach(item => {
+
+      const select =
+        item.querySelector(".packageType");
+
+      const quantity =
+        Number(
+          item.querySelector(".quantity").value || 0
+        );
+
+
+      const option =
+        select.options[select.selectedIndex];
+
+
+      const price =
+        Number(
+          option?.dataset?.price || 0
+        );
+
+
+      const lineTotal =
+        price * quantity;
+
+
+      item.querySelector(".lineTotal")
+        .textContent =
+          lineTotal.toLocaleString();
+
+
+      total += lineTotal;
+
+    });
+
+
+  totalEl.textContent =
+    total.toLocaleString();
+
+
+  return total;
+}
+
+
+// =========================
+// เรียงเลขรายการใหม่
+// =========================
+
+function renumberItems() {
+
+  document
+    .querySelectorAll(".order-item")
+    .forEach((item, index) => {
+
+      const h3 =
+        item.querySelector("h3");
+
+      h3.textContent =
+        `🍚 รายการที่ ${index + 1}`;
+
+    });
+
+
+  itemNumber =
+    document.querySelectorAll(".order-item").length;
+
+}
+
+
+// =========================
+// เก็บข้อมูลแต่ละรายการ
+// =========================
+
+function getItems() {
+
+  const items = [];
+
+
+  document
+    .querySelectorAll(".order-item")
+    .forEach(item => {
+
+      const rice =
+        item.querySelector(
+          'input[type="radio"]:checked'
+        );
+
+
+      const packageType =
+        item.querySelector(".packageType");
+
+
+      const quantity =
+        Number(
+          item.querySelector(".quantity").value
+        );
+
+
+      const toppings =
+        [...item.querySelectorAll(".topping:checked")]
+          .map(cb => cb.value);
+
+
+      const option =
+        packageType.options[
+          packageType.selectedIndex
+        ];
+
+
+      const unitPrice =
+        Number(
+          option?.dataset?.price || 0
+        );
+
+
+      items.push({
+
+        riceType:
+          rice?.value || "",
+
+        packageType:
+          packageType.value,
+
+        toppings,
+
+        quantity,
+
+        unitPrice,
+
+        lineTotal:
+          unitPrice * quantity
+
+      });
+
+    });
+
+
+  return items;
+}
+
+
+// =========================
+// เริ่มต้น 1 รายการ
+// =========================
+
+addItem();
+
+
+// =========================
+// ปุ่มเพิ่มรายการ
+// =========================
 
 addItemBtn.onclick = () => {
 
   addItem();
 
+  window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: "smooth"
+  });
+
 };
 
 
-// ========================================
+// =========================
 // ส่งออเดอร์
-// ========================================
+// =========================
 
-submitBtn.onclick = async () => {
+form.addEventListener("submit", async e => {
+
+  e.preventDefault();
+
 
   messageEl.textContent = "";
 
 
-  // ------------------------------------
-  // ตรวจข้อมูลรายการ
-  // ------------------------------------
+  const items =
+    getItems();
+
 
   if (!items.length) {
 
@@ -476,12 +487,30 @@ submitBtn.onclick = async () => {
   }
 
 
+  // ตรวจสอบรายการ
   for (const item of items) {
 
-    if (!item.quantity ||
-        item.quantity < 1) {
+    if (!item.riceType) {
 
-      alert("จำนวนสินค้าต้องมากกว่า 0");
+      alert("กรุณาเลือกชนิดข้าวทุกเมนู");
+
+      return;
+
+    }
+
+
+    if (!item.packageType) {
+
+      alert("กรุณาเลือกรูปแบบทุกเมนู");
+
+      return;
+
+    }
+
+
+    if (!item.toppings.length) {
+
+      alert("กรุณาเลือกหน้าทุกเมนู");
 
       return;
 
@@ -490,341 +519,122 @@ submitBtn.onclick = async () => {
   }
 
 
-  // ------------------------------------
-  // ข้อมูลลูกค้า
-  // ------------------------------------
+  const total =
+    items.reduce(
+      (sum, item) =>
+        sum + item.lineTotal,
+      0
+    );
 
-  const customerName =
-    document
-      .getElementById("customerName")
-      .value
-      .trim();
-
-
-  const phone =
-    document
-      .getElementById("phone")
-      .value
-      .trim();
-
-
-  const address =
-    document
-      .getElementById("address")
-      .value
-      .trim();
-
-
-  const note =
-    document
-      .getElementById("note")
-      .value
-      .trim();
-
-
-  if (!customerName) {
-
-    alert("กรุณากรอกชื่อลูกค้า");
-
-    return;
-
-  }
-
-
-  if (!phone) {
-
-    alert("กรุณากรอกเบอร์โทร");
-
-    return;
-
-  }
-
-
-  if (!address) {
-
-    alert("กรุณากรอกที่อยู่");
-
-    return;
-
-  }
-
-
-  // ------------------------------------
-  // เตรียมรายการ
-  // ------------------------------------
-
-  const orderItems =
-    items.map(item => {
-
-      const quantity =
-        Number(item.quantity);
-
-
-      return {
-
-        riceType:
-          item.riceType,
-
-        topping:
-          item.topping,
-
-        packageType:
-          item.packageType,
-
-        quantity:
-          quantity,
-
-        unitPrice:
-          PRICE_PER_SET,
-
-        total:
-          quantity * PRICE_PER_SET
-
-      };
-
-    });
-
-
-  // ------------------------------------
-  // จำนวนรวม
-  // ------------------------------------
 
   const totalQuantity =
-    orderItems.reduce(
+    items.reduce(
       (sum, item) =>
         sum + item.quantity,
       0
     );
 
 
-  // ------------------------------------
-  // เงินรวม
-  // ------------------------------------
-
-  const totalMoney =
-    orderItems.reduce(
-      (sum, item) =>
-        sum + item.total,
-      0
-    );
+  const customerName =
+    document.getElementById("customerName")
+      .value.trim();
 
 
-  // ------------------------------------
-  // ป้องกันกดซ้ำ
-  // ------------------------------------
+  const phone =
+    document.getElementById("phone")
+      .value.trim();
+
+
+  const address =
+    document.getElementById("address")
+      .value.trim();
+
+
+  const note =
+    document.getElementById("note")
+      .value.trim();
+
 
   submitBtn.disabled = true;
-
   submitBtn.textContent =
     "กำลังส่งออเดอร์...";
 
 
   try {
 
-    // ----------------------------------
-    // บันทึก Firestore
-    // ----------------------------------
+    /*
+      เก็บ items แบบใหม่
+      และยังเก็บข้อมูลรายการแรกไว้ด้วย
+      เพื่อให้ระบบเก่าที่มีอยู่ยังอ่านได้
+    */
+
+    const first = items[0];
+
 
     await addDoc(
       collection(db, "orders"),
       {
 
-        // ข้อมูลลูกค้า
-        customerName:
-          customerName,
+        customerName,
 
-        phone:
-          phone,
+        phone,
 
-        address:
-          address,
+        address,
 
-        note:
-          note,
+        note,
 
+        items,
 
-        // รายการทั้งหมด
-        items:
-          orderItems,
+        total,
 
+        quantity: totalQuantity,
 
-        // จำนวนรวม
-        quantity:
-          totalQuantity,
+        riceType: first.riceType,
 
+        toppings: first.toppings,
 
-        // ยอดรวม
-        total:
-          totalMoney,
+        packageType: first.packageType,
 
+        orderStatus: "รอทำ",
 
-        // สถานะ
-        orderStatus:
-          "รอทำ",
-
-
-        // เวลา
         createdAt:
-          serverTimestamp(),
-
-
-        // --------------------------------
-        // ข้อมูลชุดแรก
-        // --------------------------------
-        // เก็บไว้เพื่อให้ admin.js
-        // รุ่นปัจจุบันยังอ่านได้
-
-        riceType:
-          orderItems[0].riceType,
-
-        toppings:
-          [orderItems[0].topping],
-
-        packageType:
-          orderItems[0].packageType
+          serverTimestamp()
 
       }
     );
 
 
-    // ----------------------------------
-    // สำเร็จ
-    // ----------------------------------
-
     messageEl.textContent =
-      "✅ สั่งซื้อเรียบร้อยแล้ว";
+      "✅ รับออเดอร์เรียบร้อยแล้วครับ";
 
 
-    messageEl.style.color =
-      "green";
+    form.reset();
 
 
-    alert(
-      `สั่งซื้อเรียบร้อยแล้ว\n\n` +
-      `ทั้งหมด ${totalQuantity} ชุด\n` +
-      `รวม ${totalMoney.toLocaleString()} บาท`
-    );
+    itemsEl.innerHTML = "";
 
+    itemNumber = 0;
 
-    // ----------------------------------
-    // ล้างฟอร์ม
-    // ----------------------------------
+    addItem();
 
-    document
-      .getElementById("customerName")
-      .value = "";
-
-
-    document
-      .getElementById("phone")
-      .value = "";
-
-
-    document
-      .getElementById("address")
-      .value = "";
-
-
-    document
-      .getElementById("note")
-      .value = "";
-
-
-    items = [
-      createItem()
-    ];
-
-
-    renderItems();
+    calculateTotal();
 
 
   } catch (error) {
 
     console.error(error);
 
-
     messageEl.textContent =
-      "❌ ส่งออเดอร์ไม่สำเร็จ";
+      "❌ ส่งออเดอร์ไม่สำเร็จ กรุณาลองใหม่";
 
-
-    messageEl.style.color =
-      "red";
-
-
-    alert(
-      "ส่งออเดอร์ไม่สำเร็จ\n\n" +
-      "กรุณาลองใหม่อีกครั้ง"
-    );
 
   } finally {
 
     submitBtn.disabled = false;
 
     submitBtn.textContent =
-      "✅ ยืนยันสั่งซื้อ";
+      "✅ ยืนยันออเดอร์";
 
   }
 
-};
-
-
-// ========================================
-// CSS ช่องกรอก
-// ========================================
-
-function inputStyle() {
-
-  return `
-    width:100%;
-    box-sizing:border-box;
-    padding:11px;
-    margin:6px 0 15px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    font-size:16px;
-    background:white;
-  `;
-
-}
-
-
-// ========================================
-// ป้องกัน HTML
-// ========================================
-
-function escapeHtml(value) {
-
-  return String(value)
-    .replace(
-      /[&<>"']/g,
-      char => ({
-
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-
-      }[char])
-    );
-
-}
-
-
-function escapeAttr(value) {
-
-  return escapeHtml(value);
-
-}
-
-
-// ========================================
-// เริ่มต้น
-// ========================================
-
-items = [
-  createItem()
-];
-
-
-renderItems();
+});
