@@ -2,64 +2,30 @@
 <html lang="th">
 
 <head>
-
   <meta charset="utf-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>จัดการออเดอร์</title>
 
-  <link
-    rel="stylesheet"
-    href="style.css"
-  >
-
+  <link rel="stylesheet" href="style.css">
 </head>
-
 
 <body>
 
   <main class="container">
 
-
-    <!-- ============================= -->
-    <!-- หัวเว็บ -->
-    <!-- ============================= -->
-
     <header class="hero">
-
-      <h1>
-        📋 จัดการออเดอร์
-      </h1>
-
-      <p>
-        สำหรับผู้ดูแลร้าน
-      </p>
-
+      <h1>📋 จัดการออเดอร์</h1>
+      <p>สำหรับผู้ดูแลร้าน</p>
     </header>
 
+    <section id="loginBox" class="card">
 
-    <!-- ============================= -->
-    <!-- LOGIN -->
-    <!-- ============================= -->
-
-    <section
-      id="loginBox"
-      class="card"
-    >
-
-      <h2>
-        🔐 เข้าสู่ระบบ
-      </h2>
-
+      <h2>🔐 เข้าสู่ระบบ</h2>
 
       <p>
         กรุณาเข้าสู่ระบบด้วย Google
       </p>
-
 
       <button
         id="loginBtn"
@@ -68,7 +34,6 @@
         🔐 เข้าสู่ระบบ Google
       </button>
 
-
       <p
         id="loginMessage"
         class="message"
@@ -76,10 +41,6 @@
 
     </section>
 
-
-    <!-- ============================= -->
-    <!-- ADMIN -->
-    <!-- ============================= -->
 
     <section
       id="adminBox"
@@ -92,7 +53,6 @@
 
           <strong id="userEmail"></strong>
 
-
           <div
             id="summary"
             class="summary"
@@ -101,7 +61,6 @@
           </div>
 
         </div>
-
 
         <button
           id="logoutBtn"
@@ -118,19 +77,13 @@
 
     </section>
 
-
   </main>
 
 
-  <!-- ============================= -->
-  <!-- JAVASCRIPT -->
-  <!-- ============================= -->
-
   <script
     type="module"
-    src="admin.js?v=10"
+    src="./admin.js?v=10"
   ></script>
-
 
 </body>
 
