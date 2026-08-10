@@ -1,80 +1,164 @@
 <!doctype html>
 <html lang="th">
+
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>จัดการออเดอร์</title>
-  <link rel="stylesheet" href="style.css">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>สั่งข้าวเหนียว</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 </head>
+
 
 <body>
 
   <main class="container">
 
     <header class="hero">
-      <h1>📋 จัดการออเดอร์</h1>
-      <p>สำหรับครอบครัว/ผู้ดูแลร้าน</p>
+
+      <h1>🍚 สั่งข้าวเหนียว</h1>
+
+      <p>
+        เลือกเมนูที่ต้องการ
+      </p>
+
     </header>
 
 
-    <section id="loginBox" class="card">
+    <!-- ========================= -->
+    <!-- รายการอาหาร -->
+    <!-- ========================= -->
 
-      <p>
-        เข้าสู่ระบบด้วย Google เพื่อดูออเดอร์
-      </p>
+    <section class="card">
 
-      <button id="loginBtn">
-        🔐 เข้าสู่ระบบ Google
+      <h2>🛒 รายการอาหาร</h2>
+
+      <div id="items"></div>
+
+
+      <button
+        id="addItemBtn"
+        type="button"
+        style="
+          width:100%;
+          margin-top:15px;
+          padding:14px;
+          font-size:17px;
+          font-weight:bold;
+          border-radius:10px;
+        "
+      >
+        ＋ เพิ่มรายการ
       </button>
 
-      <p
-        id="loginMessage"
-        class="message"
-      ></p>
+
+      <div
+        id="orderSummary"
+        style="
+          margin-top:20px;
+          padding:15px;
+          border-radius:10px;
+          background:#f5f5f5;
+          font-size:18px;
+          font-weight:bold;
+        "
+      >
+        รวม 0 ชุด • 0 บาท
+      </div>
 
     </section>
 
 
-    <section
-      id="adminBox"
-      class="card hidden"
-    >
+    <!-- ========================= -->
+    <!-- ข้อมูลลูกค้า -->
+    <!-- ========================= -->
 
-      <div class="toolbar">
+    <section class="card">
 
-        <div>
-
-          <strong id="userEmail"></strong>
-
-          <div
-            class="summary"
-            id="summary"
-          ></div>
-
-        </div>
-
-        <button
-          id="logoutBtn"
-          class="secondary"
-        >
-          ออกจากระบบ
-        </button>
-
-      </div>
+      <h2>👤 ข้อมูลลูกค้า</h2>
 
 
-      <div id="orders"></div>
+      <label for="customerName">
+        ชื่อลูกค้า
+      </label>
+
+      <input
+        id="customerName"
+        type="text"
+        placeholder="ชื่อ"
+      >
+
+
+      <label for="phone">
+        📞 เบอร์โทร
+      </label>
+
+      <input
+        id="phone"
+        type="tel"
+        placeholder="เบอร์โทรศัพท์"
+      >
+
+
+      <label for="address">
+        📍 ที่อยู่
+      </label>
+
+      <textarea
+        id="address"
+        placeholder="บ้าน / ที่อยู่สำหรับจัดส่ง"
+      ></textarea>
+
+
+      <label for="note">
+        📝 หมายเหตุ
+      </label>
+
+      <textarea
+        id="note"
+        placeholder="เช่น ไม่เผ็ด, โทรก่อนส่ง"
+      ></textarea>
+
+
+      <button
+        id="submitBtn"
+        type="button"
+        style="
+          width:100%;
+          margin-top:20px;
+          padding:15px;
+          font-size:18px;
+          font-weight:bold;
+          border-radius:10px;
+        "
+      >
+        ✅ ยืนยันสั่งซื้อ
+      </button>
+
+
+      <p
+        id="message"
+        class="message"
+      ></p>
 
     </section>
 
   </main>
 
 
-  <!-- เพิ่ม ?v=2 เพื่อบังคับให้โหลด admin.js ตัวใหม่ -->
   <script
     type="module"
-    src="admin.js?v=2"
+    src="app.js?v=3"
   ></script>
 
 </body>
+
 </html>
