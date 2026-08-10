@@ -1,267 +1,830 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
 import {
   getFirestore,
   collection,
-  query,
-  orderBy,
-  onSnapshot,
-  doc,
-  updateDoc,
-  deleteDoc
+  addDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { firebaseConfig } from "./firebase-config.js";
 
-import { firebaseConfig, ADMIN_EMAIL } from "./firebase-config.js";
+
+// ========================================
+// Firebase
+// ========================================
 
 const app = initializeApp(firebaseConfig);
+
 const db = getFirestore(app);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 
-const loginBox = document.getElementById("loginBox");
-const adminBox = document.getElementById("adminBox");
-const loginMessage = document.getElementById("loginMessage");
-const ordersEl = document.getElementById("orders");
-const summary = document.getElementById("summary");
-const userEmail = document.getElementById("userEmail");
 
-document.getElementById("loginBtn").onclick = async () => {
-  loginMessage.textContent = "";
+// ========================================
+// ตั้งราคาต่อชุด
+// ========================================
 
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (e) {
-    console.error(e);
-    loginMessage.textContent = "เข้าสู่ระบบไม่สำเร็จ";
+const PRICE_PER_SET = 20;
+
+
+// ========================================
+// ตัวเลือก
+// ========================================
+
+const RICE_OPTIONS = [
+  "ข้าวเหนียวขาว",
+  "ข้าวเหนียวดำ"
+];
+
+
+const TOPPING_OPTIONS = [
+  "หมูฝอย",
+  "หมูกรอบ"
+];
+
+
+const PACKAGE_OPTIONS = [
+  "ปกติ 1 อย่าง"
+];
+
+
+// ========================================
+// Elements
+// ========================================
+
+const itemsEl =
+  document.getElementById("items");
+
+const addItemBtn =
+  document.getElementById("addItemBtn");
+
+const orderSummary =
+  document.getElementById("orderSummary");
+
+const submitBtn =
+  document.getElementById("submitBtn");
+
+const messageEl =
+  document.getElementById("message");
+
+
+// ========================================
+// รายการสินค้า
+// ========================================
+
+let items = [];
+
+
+// ========================================
+// สร้างรายการใหม่
+// ========================================
+
+function createItem() {
+
+  return {
+
+    riceType: "ข้าวเหนียวขาว",
+
+    topping: "หมูฝอย",
+
+    packageType: "ปกติ 1 อย่าง",
+
+    quantity: 1
+
+  };
+
+}
+
+
+// ========================================
+// เพิ่มรายการ
+// ========================================
+
+function addItem() {
+
+  items.push(createItem());
+
+  renderItems();
+
+}
+
+
+// ========================================
+// ลบรายการ
+// ========================================
+
+function removeItem(index) {
+
+  if (items.length <= 1) {
+
+    alert("ต้องมีอย่างน้อย 1 รายการ");
+
+    return;
+
   }
+
+
+  items.splice(index, 1);
+
+  renderItems();
+
+}
+
+
+// ========================================
+// แสดงรายการ
+// ========================================
+
+function renderItems() {
+
+  itemsEl.innerHTML = "";
+
+
+  items.forEach((item, index) => {
+
+    const box =
+      document.createElement("div");
+
+
+    box.style.cssText = `
+      border:1px solid #ddd;
+      border-radius:12px;
+      padding:15px;
+      margin-top:15px;
+      background:#fff;
+    `;
+
+
+    box.innerHTML = `
+
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:12px;
+      ">
+
+        <strong style="font-size:18px">
+          รายการที่ ${index + 1}
+        </strong>
+
+        ${
+          items.length > 1
+            ? `
+              <button
+                type="button"
+                class="removeItemBtn"
+                data-index="${index}"
+                style="
+                  background:#d32f2f;
+                  color:white;
+                  border:0;
+                  border-radius:8px;
+                  padding:8px 12px;
+                "
+              >
+                🗑️ ลบ
+              </button>
+            `
+            : ""
+        }
+
+      </div>
+
+
+      <label>
+        🍚 ข้าว
+      </label>
+
+      <select
+        class="riceSelect"
+        data-index="${index}"
+        style="${inputStyle()}"
+      >
+
+        ${RICE_OPTIONS.map(rice => `
+          <option
+            value="${escapeAttr(rice)}"
+            ${
+              rice === item.riceType
+                ? "selected"
+                : ""
+            }
+          >
+            ${escapeHtml(rice)}
+          </option>
+        `).join("")}
+
+      </select>
+
+
+      <label>
+        🥩 หน้า
+      </label>
+
+      <select
+        class="toppingSelect"
+        data-index="${index}"
+        style="${inputStyle()}"
+      >
+
+        ${TOPPING_OPTIONS.map(topping => `
+          <option
+            value="${escapeAttr(topping)}"
+            ${
+              topping === item.topping
+                ? "selected"
+                : ""
+            }
+          >
+            ${escapeHtml(topping)}
+          </option>
+        `).join("")}
+
+      </select>
+
+
+      <label>
+        📦 แบบ
+      </label>
+
+      <select
+        class="packageSelect"
+        data-index="${index}"
+        style="${inputStyle()}"
+      >
+
+        ${PACKAGE_OPTIONS.map(packageType => `
+          <option
+            value="${escapeAttr(packageType)}"
+            ${
+              packageType === item.packageType
+                ? "selected"
+                : ""
+            }
+          >
+            ${escapeHtml(packageType)}
+          </option>
+        `).join("")}
+
+      </select>
+
+
+      <label>
+        🔢 จำนวน
+      </label>
+
+      <input
+        class="quantityInput"
+        data-index="${index}"
+        type="number"
+        min="1"
+        value="${item.quantity}"
+        style="${inputStyle()}"
+      >
+
+
+      <div style="
+        margin-top:10px;
+        font-weight:bold;
+        font-size:17px;
+      ">
+        ${PRICE_PER_SET.toLocaleString()} บาท/ชุด
+      </div>
+
+    `;
+
+
+    itemsEl.appendChild(box);
+
+  });
+
+
+  attachItemEvents();
+
+  updateSummary();
+
+}
+
+
+// ========================================
+// Event ของแต่ละรายการ
+// ========================================
+
+function attachItemEvents() {
+
+
+  document
+    .querySelectorAll(".removeItemBtn")
+    .forEach(button => {
+
+      button.onclick = () => {
+
+        const index =
+          Number(button.dataset.index);
+
+        removeItem(index);
+
+      };
+
+    });
+
+
+  document
+    .querySelectorAll(".riceSelect")
+    .forEach(select => {
+
+      select.onchange = () => {
+
+        const index =
+          Number(select.dataset.index);
+
+        items[index].riceType =
+          select.value;
+
+      };
+
+    });
+
+
+  document
+    .querySelectorAll(".toppingSelect")
+    .forEach(select => {
+
+      select.onchange = () => {
+
+        const index =
+          Number(select.dataset.index);
+
+        items[index].topping =
+          select.value;
+
+      };
+
+    });
+
+
+  document
+    .querySelectorAll(".packageSelect")
+    .forEach(select => {
+
+      select.onchange = () => {
+
+        const index =
+          Number(select.dataset.index);
+
+        items[index].packageType =
+          select.value;
+
+      };
+
+    });
+
+
+  document
+    .querySelectorAll(".quantityInput")
+    .forEach(input => {
+
+      input.oninput = () => {
+
+        const index =
+          Number(input.dataset.index);
+
+
+        let quantity =
+          Number(input.value);
+
+
+        if (!Number.isFinite(quantity) ||
+            quantity < 1) {
+
+          quantity = 1;
+
+        }
+
+
+        quantity =
+          Math.floor(quantity);
+
+
+        items[index].quantity =
+          quantity;
+
+
+        updateSummary();
+
+      };
+
+    });
+
+}
+
+
+// ========================================
+// สรุปยอด
+// ========================================
+
+function updateSummary() {
+
+  const totalQty =
+    items.reduce(
+      (sum, item) =>
+        sum + Number(item.quantity || 0),
+      0
+    );
+
+
+  const total =
+    totalQty * PRICE_PER_SET;
+
+
+  orderSummary.textContent =
+    `รวม ${totalQty} ชุด • ${total.toLocaleString()} บาท`;
+
+}
+
+
+// ========================================
+// กดเพิ่มรายการ
+// ========================================
+
+addItemBtn.onclick = () => {
+
+  addItem();
+
 };
 
-document.getElementById("logoutBtn").onclick = () => signOut(auth);
 
-function esc(v) {
-  return String(v).replace(
-    /[&<>"']/g,
-    m => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[m])
-  );
-}
+// ========================================
+// ส่งออเดอร์
+// ========================================
 
-function renderOrders(snap) {
-  const rows = snap.docs.map(d => ({
-    id: d.id,
-    ...d.data()
-  }));
+submitBtn.onclick = async () => {
 
-  rows.sort(
-    (a, b) =>
-      (b.createdAt?.seconds || 0) -
-      (a.createdAt?.seconds || 0)
-  );
+  messageEl.textContent = "";
 
-  const totalQty = rows.reduce(
-    (s, o) => s + Number(o.quantity || 0),
-    0
-  );
 
-  const totalMoney = rows.reduce(
-    (s, o) => s + Number(o.total || 0),
-    0
-  );
+  // ------------------------------------
+  // ตรวจข้อมูลรายการ
+  // ------------------------------------
 
-  summary.textContent =
-    `ทั้งหมด ${rows.length} ออเดอร์ • ` +
-    `${totalQty} ชุด • ` +
-    `${totalMoney.toLocaleString()} บาท`;
+  if (!items.length) {
 
-  ordersEl.innerHTML = rows.length
-    ? rows.map(o => {
-
-        const status = o.orderStatus || "รอทำ";
-
-        return `
-          <article class="order">
-
-            <h3>
-              🍚 ${esc(o.customerName || "-")}
-              — ${Number(o.total || 0).toLocaleString()} บาท
-            </h3>
-
-            <div class="line">
-              ข้าว: ${esc(o.riceType || "-")}
-            </div>
-
-            <div class="line">
-              หน้า: ${esc(
-                (o.toppings || []).join(" + ") || "-"
-              )}
-            </div>
-
-            <div class="line">
-              แบบ: ${esc(o.packageType || "-")}
-              × ${Number(o.quantity || 0)}
-            </div>
-
-            <div class="line">
-              📞 ${esc(o.phone || "-")}
-            </div>
-
-            <div class="line">
-              📍 ${esc(o.address || "-")}
-            </div>
-
-            <div class="line">
-              📝 ${esc(o.note || "-")}
-            </div>
-
-            <div class="line">
-              <strong>สถานะ:</strong>
-            </div>
-
-            <select
-              data-id="${o.id}"
-              class="status"
-            >
-              ${[
-                "รอทำ",
-                "กำลังทำ",
-                "พร้อมส่ง",
-                "ส่งแล้ว",
-                "ยกเลิก"
-              ].map(
-                s =>
-                  `<option ${
-                    s === status ? "selected" : ""
-                  }>${s}</option>`
-              ).join("")}
-            </select>
-
-            <button
-              class="deleteOrder"
-              data-id="${o.id}"
-            >
-              🗑️ ลบออเดอร์
-            </button>
-
-          </article>
-        `;
-      }).join("")
-    : "<p>ยังไม่มีออเดอร์</p>";
-
-  document.querySelectorAll(".status").forEach(sel => {
-
-    sel.onchange = async () => {
-
-      try {
-
-        await updateDoc(
-          doc(db, "orders", sel.dataset.id),
-          {
-            orderStatus: sel.value
-          }
-        );
-
-      } catch (e) {
-
-        console.error(e);
-        alert("เปลี่ยนสถานะไม่สำเร็จ");
-
-      }
-
-    };
-
-  });
-
-  document.querySelectorAll(".deleteOrder").forEach(btn => {
-
-    btn.onclick = async () => {
-
-      const ok = confirm(
-        "ต้องการลบออเดอร์นี้ใช่ไหม?\n\nการลบแล้วจะไม่สามารถกู้คืนได้"
-      );
-
-      if (!ok) return;
-
-      try {
-
-        await deleteDoc(
-          doc(db, "orders", btn.dataset.id)
-        );
-
-      } catch (e) {
-
-        console.error(e);
-        alert("ลบออเดอร์ไม่สำเร็จ");
-
-      }
-
-    };
-
-  });
-}
-
-let unsubscribe = null;
-
-onAuthStateChanged(auth, user => {
-
-  if (unsubscribe) {
-    unsubscribe();
-    unsubscribe = null;
-  }
-
-  if (!user) {
-
-    loginBox.classList.remove("hidden");
-    adminBox.classList.add("hidden");
+    alert("กรุณาเพิ่มรายการอาหาร");
 
     return;
+
   }
 
-  if (user.email !== ADMIN_EMAIL) {
 
-    loginBox.classList.remove("hidden");
-    adminBox.classList.add("hidden");
+  for (const item of items) {
 
-    loginMessage.textContent =
-      "บัญชีนี้ไม่มีสิทธิ์เป็นผู้ดูแล";
+    if (!item.quantity ||
+        item.quantity < 1) {
 
-    signOut(auth);
+      alert("จำนวนสินค้าต้องมากกว่า 0");
 
-    return;
-  }
-
-  loginBox.classList.add("hidden");
-  adminBox.classList.remove("hidden");
-
-  userEmail.textContent = user.email;
-
-  const q = query(
-    collection(db, "orders"),
-    orderBy("createdAt", "desc")
-  );
-
-  unsubscribe = onSnapshot(
-    q,
-    renderOrders,
-    err => {
-
-      console.error(err);
-
-      ordersEl.innerHTML =
-        "<p>อ่านออเดอร์ไม่ได้ กรุณาตรวจสอบ Rules</p>";
+      return;
 
     }
-  );
 
-});
+  }
+
+
+  // ------------------------------------
+  // ข้อมูลลูกค้า
+  // ------------------------------------
+
+  const customerName =
+    document
+      .getElementById("customerName")
+      .value
+      .trim();
+
+
+  const phone =
+    document
+      .getElementById("phone")
+      .value
+      .trim();
+
+
+  const address =
+    document
+      .getElementById("address")
+      .value
+      .trim();
+
+
+  const note =
+    document
+      .getElementById("note")
+      .value
+      .trim();
+
+
+  if (!customerName) {
+
+    alert("กรุณากรอกชื่อลูกค้า");
+
+    return;
+
+  }
+
+
+  if (!phone) {
+
+    alert("กรุณากรอกเบอร์โทร");
+
+    return;
+
+  }
+
+
+  if (!address) {
+
+    alert("กรุณากรอกที่อยู่");
+
+    return;
+
+  }
+
+
+  // ------------------------------------
+  // เตรียมรายการ
+  // ------------------------------------
+
+  const orderItems =
+    items.map(item => {
+
+      const quantity =
+        Number(item.quantity);
+
+
+      return {
+
+        riceType:
+          item.riceType,
+
+        topping:
+          item.topping,
+
+        packageType:
+          item.packageType,
+
+        quantity:
+          quantity,
+
+        unitPrice:
+          PRICE_PER_SET,
+
+        total:
+          quantity * PRICE_PER_SET
+
+      };
+
+    });
+
+
+  // ------------------------------------
+  // จำนวนรวม
+  // ------------------------------------
+
+  const totalQuantity =
+    orderItems.reduce(
+      (sum, item) =>
+        sum + item.quantity,
+      0
+    );
+
+
+  // ------------------------------------
+  // เงินรวม
+  // ------------------------------------
+
+  const totalMoney =
+    orderItems.reduce(
+      (sum, item) =>
+        sum + item.total,
+      0
+    );
+
+
+  // ------------------------------------
+  // ป้องกันกดซ้ำ
+  // ------------------------------------
+
+  submitBtn.disabled = true;
+
+  submitBtn.textContent =
+    "กำลังส่งออเดอร์...";
+
+
+  try {
+
+    // ----------------------------------
+    // บันทึก Firestore
+    // ----------------------------------
+
+    await addDoc(
+      collection(db, "orders"),
+      {
+
+        // ข้อมูลลูกค้า
+        customerName:
+          customerName,
+
+        phone:
+          phone,
+
+        address:
+          address,
+
+        note:
+          note,
+
+
+        // รายการทั้งหมด
+        items:
+          orderItems,
+
+
+        // จำนวนรวม
+        quantity:
+          totalQuantity,
+
+
+        // ยอดรวม
+        total:
+          totalMoney,
+
+
+        // สถานะ
+        orderStatus:
+          "รอทำ",
+
+
+        // เวลา
+        createdAt:
+          serverTimestamp(),
+
+
+        // --------------------------------
+        // ข้อมูลชุดแรก
+        // --------------------------------
+        // เก็บไว้เพื่อให้ admin.js
+        // รุ่นปัจจุบันยังอ่านได้
+
+        riceType:
+          orderItems[0].riceType,
+
+        toppings:
+          [orderItems[0].topping],
+
+        packageType:
+          orderItems[0].packageType
+
+      }
+    );
+
+
+    // ----------------------------------
+    // สำเร็จ
+    // ----------------------------------
+
+    messageEl.textContent =
+      "✅ สั่งซื้อเรียบร้อยแล้ว";
+
+
+    messageEl.style.color =
+      "green";
+
+
+    alert(
+      `สั่งซื้อเรียบร้อยแล้ว\n\n` +
+      `ทั้งหมด ${totalQuantity} ชุด\n` +
+      `รวม ${totalMoney.toLocaleString()} บาท`
+    );
+
+
+    // ----------------------------------
+    // ล้างฟอร์ม
+    // ----------------------------------
+
+    document
+      .getElementById("customerName")
+      .value = "";
+
+
+    document
+      .getElementById("phone")
+      .value = "";
+
+
+    document
+      .getElementById("address")
+      .value = "";
+
+
+    document
+      .getElementById("note")
+      .value = "";
+
+
+    items = [
+      createItem()
+    ];
+
+
+    renderItems();
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    messageEl.textContent =
+      "❌ ส่งออเดอร์ไม่สำเร็จ";
+
+
+    messageEl.style.color =
+      "red";
+
+
+    alert(
+      "ส่งออเดอร์ไม่สำเร็จ\n\n" +
+      "กรุณาลองใหม่อีกครั้ง"
+    );
+
+  } finally {
+
+    submitBtn.disabled = false;
+
+    submitBtn.textContent =
+      "✅ ยืนยันสั่งซื้อ";
+
+  }
+
+};
+
+
+// ========================================
+// CSS ช่องกรอก
+// ========================================
+
+function inputStyle() {
+
+  return `
+    width:100%;
+    box-sizing:border-box;
+    padding:11px;
+    margin:6px 0 15px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+    background:white;
+  `;
+
+}
+
+
+// ========================================
+// ป้องกัน HTML
+// ========================================
+
+function escapeHtml(value) {
+
+  return String(value)
+    .replace(
+      /[&<>"']/g,
+      char => ({
+
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+
+      }[char])
+    );
+
+}
+
+
+function escapeAttr(value) {
+
+  return escapeHtml(value);
+
+}
+
+
+// ========================================
+// เริ่มต้น
+// ========================================
+
+items = [
+  createItem()
+];
+
+
+renderItems();
