@@ -1,73 +1,267 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
+import {
+  getFirestore,
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  doc,
+  updateDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import { firebaseConfig, ADMIN_EMAIL } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
-const form = document.getElementById("orderForm");
-const packageType = document.getElementById("packageType");
-const quantity = document.getElementById("quantity");
-const total = document.getElementById("total");
-const message = document.getElementById("message");
-const submitBtn = document.getElementById("submitBtn");
+const loginBox = document.getElementById("loginBox");
+const adminBox = document.getElementById("adminBox");
+const loginMessage = document.getElementById("loginMessage");
+const ordersEl = document.getElementById("orders");
+const summary = document.getElementById("summary");
+const userEmail = document.getElementById("userEmail");
 
-function selectedToppings(){
-  return [...document.querySelectorAll('input[name="topping"]:checked')].map(x=>x.value);
-}
-function updateTotal(){
-  const price = Number(packageType.selectedOptions[0]?.dataset.price || 0);
-  total.textContent = price * Math.max(1, Number(quantity.value || 1));
-}
-packageType.addEventListener("change", updateTotal);
-quantity.addEventListener("input", updateTotal);
+document.getElementById("loginBtn").onclick = async () => {
+  loginMessage.textContent = "";
 
-form.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  message.textContent = "";
-  const riceType = document.querySelector('input[name="riceType"]:checked')?.value;
-  const toppings = selectedToppings();
-  const pack = packageType.value;
-  const toppingLimit = pack === "ปกติ 1 อย่าง" ? 1 : pack === "ปกติ 2 อย่าง" ? 2 : null;
-
-  if (!riceType) return message.textContent = "กรุณาเลือกชนิดข้าว";
-  if (!toppings.length) return message.textContent = "กรุณาเลือกหน้าอย่างน้อย 1 อย่าง";
-  if (toppingLimit && toppings.length !== toppingLimit)
-    return message.textContent = `เมนู ${pack} ต้องเลือกหน้า ${toppingLimit} อย่าง`;
-  if (!toppingLimit && toppings.length > 2)
-    return message.textContent = "กรุณาเลือกหน้าไม่เกิน 2 อย่าง";
-
-  const qty = Math.max(1, Number(quantity.value || 1));
-  const price = Number(packageType.selectedOptions[0].dataset.price);
-  const order = {
-    customerName: document.getElementById("customerName").value.trim(),
-    phone: document.getElementById("phone").value.trim(),
-    address: document.getElementById("address").value.trim(),
-    note: document.getElementById("note").value.trim(),
-    riceType,
-    toppings,
-    packageType: pack,
-    quantity: qty,
-    unitPrice: price,
-    total: price * qty,
-    paymentStatus: "รอตรวจสอบ",
-    orderStatus: "รอทำ",
-    createdAt: serverTimestamp()
-  };
-
-  submitBtn.disabled = true;
-  submitBtn.textContent = "กำลังส่งออเดอร์...";
-  try{
-    const ref = await addDoc(collection(db, "orders"), order);
-    message.textContent = `รับออเดอร์แล้ว #${ref.id.slice(-6).toUpperCase()} ขอบคุณครับ`;
-    form.reset();
-    quantity.value = 1;
-    total.textContent = "0";
-  }catch(err){
-    console.error(err);
-    message.textContent = "ส่งออเดอร์ไม่สำเร็จ กรุณาลองใหม่";
-  }finally{
-    submitBtn.disabled = false;
-    submitBtn.textContent = "✅ ยืนยันออเดอร์";
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    console.error(e);
+    loginMessage.textContent = "เข้าสู่ระบบไม่สำเร็จ";
   }
+};
+
+document.getElementById("logoutBtn").onclick = () => signOut(auth);
+
+function esc(v) {
+  return String(v).replace(
+    /[&<>"']/g,
+    m => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[m])
+  );
+}
+
+function renderOrders(snap) {
+  const rows = snap.docs.map(d => ({
+    id: d.id,
+    ...d.data()
+  }));
+
+  rows.sort(
+    (a, b) =>
+      (b.createdAt?.seconds || 0) -
+      (a.createdAt?.seconds || 0)
+  );
+
+  const totalQty = rows.reduce(
+    (s, o) => s + Number(o.quantity || 0),
+    0
+  );
+
+  const totalMoney = rows.reduce(
+    (s, o) => s + Number(o.total || 0),
+    0
+  );
+
+  summary.textContent =
+    `ทั้งหมด ${rows.length} ออเดอร์ • ` +
+    `${totalQty} ชุด • ` +
+    `${totalMoney.toLocaleString()} บาท`;
+
+  ordersEl.innerHTML = rows.length
+    ? rows.map(o => {
+
+        const status = o.orderStatus || "รอทำ";
+
+        return `
+          <article class="order">
+
+            <h3>
+              🍚 ${esc(o.customerName || "-")}
+              — ${Number(o.total || 0).toLocaleString()} บาท
+            </h3>
+
+            <div class="line">
+              ข้าว: ${esc(o.riceType || "-")}
+            </div>
+
+            <div class="line">
+              หน้า: ${esc(
+                (o.toppings || []).join(" + ") || "-"
+              )}
+            </div>
+
+            <div class="line">
+              แบบ: ${esc(o.packageType || "-")}
+              × ${Number(o.quantity || 0)}
+            </div>
+
+            <div class="line">
+              📞 ${esc(o.phone || "-")}
+            </div>
+
+            <div class="line">
+              📍 ${esc(o.address || "-")}
+            </div>
+
+            <div class="line">
+              📝 ${esc(o.note || "-")}
+            </div>
+
+            <div class="line">
+              <strong>สถานะ:</strong>
+            </div>
+
+            <select
+              data-id="${o.id}"
+              class="status"
+            >
+              ${[
+                "รอทำ",
+                "กำลังทำ",
+                "พร้อมส่ง",
+                "ส่งแล้ว",
+                "ยกเลิก"
+              ].map(
+                s =>
+                  `<option ${
+                    s === status ? "selected" : ""
+                  }>${s}</option>`
+              ).join("")}
+            </select>
+
+            <button
+              class="deleteOrder"
+              data-id="${o.id}"
+            >
+              🗑️ ลบออเดอร์
+            </button>
+
+          </article>
+        `;
+      }).join("")
+    : "<p>ยังไม่มีออเดอร์</p>";
+
+  document.querySelectorAll(".status").forEach(sel => {
+
+    sel.onchange = async () => {
+
+      try {
+
+        await updateDoc(
+          doc(db, "orders", sel.dataset.id),
+          {
+            orderStatus: sel.value
+          }
+        );
+
+      } catch (e) {
+
+        console.error(e);
+        alert("เปลี่ยนสถานะไม่สำเร็จ");
+
+      }
+
+    };
+
+  });
+
+  document.querySelectorAll(".deleteOrder").forEach(btn => {
+
+    btn.onclick = async () => {
+
+      const ok = confirm(
+        "ต้องการลบออเดอร์นี้ใช่ไหม?\n\nการลบแล้วจะไม่สามารถกู้คืนได้"
+      );
+
+      if (!ok) return;
+
+      try {
+
+        await deleteDoc(
+          doc(db, "orders", btn.dataset.id)
+        );
+
+      } catch (e) {
+
+        console.error(e);
+        alert("ลบออเดอร์ไม่สำเร็จ");
+
+      }
+
+    };
+
+  });
+}
+
+let unsubscribe = null;
+
+onAuthStateChanged(auth, user => {
+
+  if (unsubscribe) {
+    unsubscribe();
+    unsubscribe = null;
+  }
+
+  if (!user) {
+
+    loginBox.classList.remove("hidden");
+    adminBox.classList.add("hidden");
+
+    return;
+  }
+
+  if (user.email !== ADMIN_EMAIL) {
+
+    loginBox.classList.remove("hidden");
+    adminBox.classList.add("hidden");
+
+    loginMessage.textContent =
+      "บัญชีนี้ไม่มีสิทธิ์เป็นผู้ดูแล";
+
+    signOut(auth);
+
+    return;
+  }
+
+  loginBox.classList.add("hidden");
+  adminBox.classList.remove("hidden");
+
+  userEmail.textContent = user.email;
+
+  const q = query(
+    collection(db, "orders"),
+    orderBy("createdAt", "desc")
+  );
+
+  unsubscribe = onSnapshot(
+    q,
+    renderOrders,
+    err => {
+
+      console.error(err);
+
+      ordersEl.innerHTML =
+        "<p>อ่านออเดอร์ไม่ได้ กรุณาตรวจสอบ Rules</p>";
+
+    }
+  );
+
 });
